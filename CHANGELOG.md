@@ -1,5 +1,9 @@
 # ChangeLog #
 
+## 0.0.2 - Feb 18, 2014
+* Removed dead code.
+* Recompiled to remove let expr overhead.
+
 ## 0.0.1 - Feb 18, 2014
 * Fixed over aggressive collapsing of array nodes.
 
