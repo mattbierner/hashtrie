@@ -24,7 +24,9 @@ package(
  ******************************************************************************/
 var size = 4;
 
-var mask = Math.pow(2, size) - 1;
+var BUCKET_SIZE = Math.pow(2, size);
+
+var mask = BUCKET_SIZE - 1;
 
 /*
  ******************************************************************************/
@@ -139,7 +141,7 @@ var arrayRemove = \at arr -> {
 };
 
 /**
- * Create an 
+ * Create an internal node from a list of pairs.
  */
 var createInternal = \pairs -> {
     var children = [];
@@ -150,20 +152,6 @@ var createInternal = \pairs -> {
     }
     
     return new InternalNode(pairs.length, children);
-};
-
-/**
- * Extract the first child node from an internal node.
- * 
- * @param removed Index of removed child.
- * @param children Subnodes.
- */
-var getChild = \removed children -> {
-    for (var i = 0, len = children.length; i < len; i = i + 1) {
-        if (i !== removed && !isEmpty children.(i))
-            return children.(i);
-    }
-    return empty;
 };
 
 /**

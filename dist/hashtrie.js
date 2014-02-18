@@ -5,7 +5,8 @@
 define(["require", "exports"], (function(require, exports) {
     "use strict";
     var hash, empty, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, size = 4,
-        mask = (Math.pow(2, size) - 1),
+        BUCKET_SIZE = Math.pow(2, size),
+        mask = (BUCKET_SIZE - 1),
         constant = (function(x) {
             return (function() {
                 return x;
@@ -80,42 +81,24 @@ define(["require", "exports"], (function(require, exports) {
             }
             return new(InternalNode)(pairs.length, children);
         }),
-        getChild = (function(removed, children) {
-            for (var i = 0, len = children.length;
-                (i < len);
-                (i = (i + 1))) {
-                if (((i !== removed) && (!isEmpty(children[i])))) return children[i];
-            }
-            return empty;
-        }),
         mergeLeaves = (function(shift, n1, n2) {
-            return (isEmpty(n2) ? n1 : (function() {
-                var h1 = n1.hash,
-                    h2 = n2.hash;
-                return ((h1 === h2) ? new(Collision)(h1, [
-                    [n2.key, n2.value],
-                    [n1.key, n1.value]
-                ]) : (function() {
-                    var subH1 = hashFragment(shift, h1),
-                        subH2 = hashFragment(shift, h2);
-                    return createInternal(((subH1 === subH2) ? [
-                        [subH1, mergeLeaves((shift + size), n1, n2)]
-                    ] : [
-                        [subH1, n1],
-                        [subH2, n2]
-                    ]));
-                })());
-            })());
+            var h1, h2, subH1, subH2;
+            return (isEmpty(n2) ? n1 : ((h1 = n1.hash), (h2 = n2.hash), ((h1 === h2) ? new(Collision)(h1, [
+                [n2.key, n2.value],
+                [n1.key, n1.value]
+            ]) : ((subH1 = hashFragment(shift, h1)), (subH2 = hashFragment(shift, h2)),
+                createInternal(((subH1 === subH2) ? [
+                    [subH1, mergeLeaves((shift + size), n1, n2)]
+                ] : [
+                    [subH1, n1],
+                    [subH2, n2]
+                ]))))));
         }),
         updateCollisionList = (function(list, f, k) {
-            return ((!list.length) ? [] : (function() {
-                var first = list[0],
-                    rest = list.slice(1);
-                return ((first[0] === k) ? (function() {
-                    var v = f(first);
-                    return (isNothing(v) ? rest : [v].concat(rest));
-                })() : [first].concat(updateCollisionList(rest, f, k)));
-            })());
+            var first, rest, v;
+            return ((!list.length) ? [] : ((first = list[0]), (rest = list.slice(1)), ((first[0] === k) ? (
+                (v = f(first)), (isNothing(v) ? rest : [v].concat(rest))) : [first].concat(
+                updateCollisionList(rest, f, k)))));
         }),
         lookup;
     (Leaf.prototype.get = (function(_, _0, k) {
@@ -148,11 +131,9 @@ define(["require", "exports"], (function(require, exports) {
             return (isNothing(v) ? empty : new(Leaf)(h, k, v));
         });
     (Leaf.prototype.modify = (function(shift, f, h, k) {
-        var self = this;
-        return ((k === self.key) ? (function() {
-            var v = f(self.value);
-            return (isNothing(v) ? empty : new(Leaf)(h, k, v));
-        })() : mergeLeaves(shift, self, alterEmpty(shift, f, h, k)));
+        var v, self = this;
+        return ((k === self.key) ? ((v = f(self.value)), (isNothing(v) ? empty : new(Leaf)(h, k, v))) :
+            mergeLeaves(shift, self, alterEmpty(shift, f, h, k)));
     }));
     (Collision.prototype.modify = (function(shift, f, h, k) {
         var self = this,
