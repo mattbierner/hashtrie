@@ -1,4 +1,4 @@
-# HAMT
+# Hashtrie
 Javascript Hash Trie
 
 ### Overview
