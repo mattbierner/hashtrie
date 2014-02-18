@@ -83,6 +83,5 @@ ht.get('b', h2); // 'y'
 
 
 [hamt]: https://github.com/mattbierner/hamt
-[pdata]: https://github.com/exclipy/pdata
-[hash-array-mapped-trie]: http://en.wikipedia.org/wiki/Hash_array_mapped_trie
+[hash-trie]: http://en.wikipedia.org/wiki/Hash_tree_(persistent_data_structure)
 [persistent]: http://en.wikipedia.org/wiki/Persistent_data_structure
