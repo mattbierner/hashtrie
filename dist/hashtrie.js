@@ -29,7 +29,7 @@ define(["require", "exports"], (function(require, exports) {
         }
         return hash;
     }));
-    (empty = ({}));
+    (empty = null);
     var Leaf = (function(hash, key, value) {
         var self = this;
         (self.hash = hash);
@@ -61,14 +61,11 @@ define(["require", "exports"], (function(require, exports) {
             return out;
         }),
         arrayRemove = (function(at, arr) {
-            var out = [],
-                len = arr.length;
-            for (var i = 0;
-                (i < at);
-                (i = 2))(out[i] = arr[i]);
-            for (var i0 = (at + 1);
-                (i0 < len);
-                (i0 = 2))(out[i0] = arr[i0]);
+            var out = [];
+            for (var i = 0, len = arr.length;
+                (i < len);
+                (i = (i + 1)))
+                if (((i !== at) && (!isEmpty(arr[i]))))(out[i] = arr[i]);
             return out;
         }),
         createInternal = (function(pairs) {
@@ -121,9 +118,6 @@ define(["require", "exports"], (function(require, exports) {
             })());
         }),
         lookup;
-    (empty.get = (function(_, _0, _1) {
-        return nothing;
-    }));
     (Leaf.prototype.get = (function(_, _0, k) {
         var self = this;
         return ((k === self.key) ? self.value : nothing);
@@ -147,7 +141,7 @@ define(["require", "exports"], (function(require, exports) {
         return lookup((shift + size), h, k, child);
     }));
     (lookup = (function(shift, h, k, n) {
-        return ((!n) ? nothing : n.get(shift, h, k));
+        return (isEmpty(n) ? nothing : n.get(shift, h, k));
     }));
     var alter, alterEmpty = (function(_, f, h, k) {
             var v = f(nothing);
@@ -173,14 +167,14 @@ define(["require", "exports"], (function(require, exports) {
             child = self.children[frag],
             newChild = alter((shift + size), f, h, k, child),
             removed = ((!isEmpty(child)) && isEmpty(newChild)),
-            added = ((child === empty) && (!isEmpty(newChild)));
+            added = (isEmpty(child) && (!isEmpty(newChild)));
         return (added ? new(InternalNode)((self.count + 1), arrayUpdate(frag, newChild, self.children)) :
-            (removed ? (((self.count - 1) <= 1) ? getChild(frag, self.children) : new(InternalNode)((
-                self.count - 1), arrayRemove(frag, self.children))) : new(InternalNode)(self.count,
-                arrayUpdate(frag, newChild, self.children))));
+            (removed ? (((self.count - 1) === 0) ? empty : new(InternalNode)((self.count - 1),
+                arrayRemove(frag, self.children))) : new(InternalNode)(self.count, arrayUpdate(frag,
+                newChild, self.children))));
     }));
     (alter = (function(shift, f, h, k, n) {
-        return (((!n) || (n === empty)) ? alterEmpty(shift, f, h, k) : n.modify(shift, f, h, k));
+        return (isEmpty(n) ? alterEmpty(shift, f, h, k) : n.modify(shift, f, h, k));
     }));
     (getHash = (function(h, k, m) {
         return lookup(0, h, k, m);
