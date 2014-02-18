@@ -1,10 +1,10 @@
 {
-    "name": "hamt",
+    "name": "hashtrie",
     "version": "0.0.0",
-    "description": "Hash Array Mapped Trie",
+    "description": "Hash Trie",
     "keywords": [
         "trie",
-	"map",
+        "map",
         "persistent",
         "data structure",
         "hash"
@@ -13,10 +13,10 @@
     "license": "MIT",
     "repository": {
         "type": "git",
-        "url": "https://github.com/mattbierner/hamt.git"
+        "url": "https://github.com/mattbierner/hashtrie.git"
     },
     
-    "main": "dist_node/hamt.js",
+    "main": "dist_node/hastrie.js",
     "directories": {
         "lib": "dist_node"
     },
@@ -24,8 +24,7 @@
         "dist_node/",
         "lib",
         "test",
-	"test.js",
-        "index.js"
+        "test.js"
     ],
     "dependencies": {},
     "devDependencies": {
