@@ -1,34 +1,35 @@
 # HAMT
-Javascript Hash Array Mapped Trie
+Javascript Hash Trie
 
 ### Overview
-The [hash array mapped trie][hash-array-mapped-trie] is a [persistent][persistent]
-map data structure with good lookup and update performance. This
-Javascript implementation is based on [exclipy's Haskell port][pdata].
+The [hash trie][hash-trie] is a [persistent][persistent]
+map data structure with good lookup and update performance.
 
+This is a fork from [HAMT][hamt] that only uses array nodes of sparse Javascript
+arrays.
 
 ## Install
 
 ### Node
-Node source is in `dist_node/hamt.js`
+Node source is in `dist_node/hashtrie.js`
 
 ```
-$ npm install hamp
+$ npm install hashtrie
 ```
 
 ### Amd
-Amd source is in `dist/hamt.js`
+Amd source is in `dist/hashtrie.js`
 
 ```
 requirejs.config({
     paths: {
-        'hamt': 'dist/hamt'
+        'hashtrie': 'dist/hashtrie'
     }
 });
 
 require([
-    'hamt'],
-function(hamt) {
+    'hashtrie'],
+function(ht) {
     ...
 });
 ```
@@ -36,52 +37,52 @@ function(hamt) {
 ## Usage
 
 ```
-var hamt = require('hamt');
+var ht = require('hashtrie');
 
 // empty table
-var h = hamt.empty;
+var h = ht.empty;
 
 // Set 'key' to 'value'
-h = hamt.set('key', 'value', h);
+h = ht.set('key', 'value', h);
 
 // get 'key'
-hamt.get('key', h); // 'value'
+ht.get('key', h); // 'value'
 
 
 // The data structure is persistent so the original is not modified.
-var h1 = hamt.set('a', 'x', hamt.empty);
-var h2 = hamt.set('b', 'y', h1);
+var h1 = ht.set('a', 'x', ht.empty);
+var h2 = ht.set('b', 'y', h1);
 
-hamt.get('a', h1); // 'x'
-hamt.get('b', h1); // null
-hamt.get('a', h2); // 'x'
-hamt.get('b', h2); // 'y'
+ht.get('a', h1); // 'x'
+ht.get('b', h1); // null
+ht.get('a', h2); // 'x'
+ht.get('b', h2); // 'y'
 
 
 // modify an entry
-h2 = hamt.modify('b', function(x) { return x + 'z'; }, h2);
-hamt.get('b', h2); // 'yz'
+h2 = ht.modify('b', function(x) { return x + 'z'; }, h2);
+ht.get('b', h2); // 'yz'
 
 // remove an entry
-h2 = hamt.remove('y', h2);
-hamt.get('a', h2); // 'x'
-hamt.get('b', h2); // null
+h2 = ht.remove('y', h2);
+ht.get('a', h2); // 'x'
+ht.get('b', h2); // null
 
 
 // Custom hash Function
-// The main Hamt API expects all keys to be strings. Versions of all API functions
+// The main hashtrie API expects all keys to be strings. Versions of all API functions
 // that take a `hash` parameter are also provided so custom hashes and keys can be used.
 
 // Collisions are correctly handled
-var h1 = hamt.setHash(0, 'a', 'x', hamt.empty);
-var h2 = hamt.setHash(0, 'b', 'y', h1);
+var h1 = ht.setHash(0, 'a', 'x', ht.empty);
+var h2 = ht.setHash(0, 'b', 'y', h1);
 
-hamt.get('a', h2); // 'x'
-hamt.get('b', h2); // 'y'
+ht.get('a', h2); // 'x'
+ht.get('b', h2); // 'y'
 ```
 
 
-
+[hamt]: https://github.com/mattbierner/hamt
 [pdata]: https://github.com/exclipy/pdata
 [hash-array-mapped-trie]: http://en.wikipedia.org/wiki/Hash_array_mapped_trie
 [persistent]: http://en.wikipedia.org/wiki/Persistent_data_structure
