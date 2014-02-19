@@ -18,7 +18,13 @@ package(
     modify
     
     removeHash
-    remove)
+    remove
+    
+    fold
+    pairs
+    count
+    keys
+    values)
 {
 /* Configuration
  ******************************************************************************/
@@ -43,7 +49,7 @@ var isNothing = (===)@nothing;
 var hashFragment = \shift h ->
     (h >>> shift) & mask;
 
-/* 
+/* Hashing
  ******************************************************************************/
 /**
  * Get 32 bit hash of string.
@@ -274,17 +280,26 @@ in
 InternalNode.prototype.modify = \shift f h k =self-> let
     frag = hashFragment(shift, h),
     child = self.children.(frag),
-    newChild = alter(shift + size, f, h, k, child),
-    removed = !isEmpty child && isEmpty newChild,
-    added = isEmpty child && !isEmpty newChild
+    newChild = alter(shift + size, f, h, k, child)
 in
-    ?added
-        :new InternalNode(self.count + 1, arrayUpdate(frag, newChild, self.children))
-        :?removed
-            :?(self.count - 1) === 0
-                :empty
-                :new InternalNode(self.count - 1, arrayRemove(frag, self.children))
-            :new InternalNode(self.count, arrayUpdate(frag, newChild, self.children));
+    ? isEmpty child && !isEmpty newChild
+         // added
+        :new InternalNode(
+            self.count + 1,
+            arrayUpdate(frag, newChild, self.children))
+
+        :? !isEmpty child && isEmpty newChild
+             // removed
+            :?self.count - 1 <= 0
+                :newChild
+                :new InternalNode(
+                    self.count - 1,
+                    arrayRemove(frag, self.children))
+            
+            // modified
+            :new InternalNode(
+                self.count,
+                arrayUpdate(frag, newChild, self.children));
 
 alter = \shift f h k n ->
     ?isEmpty n
@@ -300,7 +315,7 @@ alter = \shift f h k n ->
  * 
  * @param h 32 bit hash.
  * @param k Key.
- * @param m HAMT
+ * @param m Hashtrie
  */
 getHash = \h k m ->
     lookup(0, h, k, m);
@@ -321,7 +336,7 @@ get = \k m ->
  * @param h 32 bit hash.
  * @param k Key.
  * @param f Function mapping current value to new value.
- * @param m HAMT
+ * @param m Hashtrie
  */
 modifyHash = \h k f m ->
     alter(0, f, h, k, m);
@@ -340,7 +355,7 @@ modify = \k f m ->
  * @param h 32 bit hash.
  * @param k Key.
  * @param v Value to store.
- * @param m HAMT
+ * @param m Hashtrie
  */
 setHash = \h k v m ->
     modifyHash(h, k, constant v, m);
@@ -356,7 +371,7 @@ set = \k v m ->
 /**
  * Delete a value with an explicit hash.
  * 
- * @param m HAMT
+ * @param m Hashtrie
  * @param h 32 bit hash.
  * @param k Key.
  */
@@ -371,4 +386,72 @@ removeHash = let del = constant nothing in
  */
 remove = \k m ->
     removeHash(hash k, k, m);
+
+/* Fold
+ ******************************************************************************/
+/**
+ * Leaf::fold
+ */
+Leaf.prototype.fold = \f z =self->
+    f(z, [self.key, self.value]);
+
+/**
+ * Collision::fold
+ */
+Collision.prototype.fold = \f z =self->
+    self.list.reduce(f, z);
+
+/**
+ * InternalNode::get
+ */
+InternalNode.prototype.fold = \f z =self->
+    self.children.reduce(fold@f, z);
+
+/**
+ * Visit every entry in the map, aggregating data.
+ * 
+ * Order of nodes is not guaranteed.
+ * 
+ * @param f Function mapping previous value and key value pair to new value.
+ * @param z Starting value.
+ * @param m Hashtrie
+ */
+fold = \f z m ->
+    ?isEmpty m
+        :z
+        :m.fold(f, z);
+
+/* Aggregate
+ ******************************************************************************/
+/**
+ * Get the number of entries.
+ */
+count = fold@((+)@1, 0);
+
+/**
+ * Get array of all key value pairs.
+ * 
+ * Order is not guaranteed.
+ */
+pairs = let build = \p c -> { p.push(c); return p; } in
+    \m ->
+        fold(build, [], m);
+
+/**
+ * Get array of all keys.
+ * 
+ * Order is not guaranteed.
+ */
+keys = let build = \p [k _] -> { p.push(k); return p; } in
+    \m ->
+        fold(build, [], m);
+
+/**
+ * Get array of all values.
+ * 
+ * Order is not guaranteed, duplicates will be preserved.
+ */
+values = let build = \p [_ v] -> { p.push(v); return p; } in
+    \m ->
+        fold(build, [], m);
 }

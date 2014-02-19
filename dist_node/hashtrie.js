@@ -3,7 +3,8 @@
  * DO NOT EDIT
 */
 "use strict";
-var hash, empty, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, size = 4,
+var hash, empty, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, fold, pairs, count, keys, values,
+        size = 4,
     BUCKET_SIZE = Math.pow(2, size),
     mask = (BUCKET_SIZE - 1),
     constant = (function(x) {
@@ -142,12 +143,11 @@ var alter, alterEmpty = (function(_, f, h, k) {
     var self = this,
         frag = hashFragment(shift, h),
         child = self.children[frag],
-        newChild = alter((shift + size), f, h, k, child),
-        removed = ((!isEmpty(child)) && isEmpty(newChild)),
-        added = (isEmpty(child) && (!isEmpty(newChild)));
-    return (added ? new(InternalNode)((self.count + 1), arrayUpdate(frag, newChild, self.children)) : (removed ?
-        (((self.count - 1) === 0) ? empty : new(InternalNode)((self.count - 1), arrayRemove(frag, self.children))) :
-        new(InternalNode)(self.count, arrayUpdate(frag, newChild, self.children))));
+        newChild = alter((shift + size), f, h, k, child);
+    return ((isEmpty(child) && (!isEmpty(newChild))) ? new(InternalNode)((self.count + 1), arrayUpdate(frag,
+        newChild, self.children)) : (((!isEmpty(child)) && isEmpty(newChild)) ? (((self.count - 1) <= 0) ?
+        newChild : new(InternalNode)((self.count - 1), arrayRemove(frag, self.children))) : new(
+        InternalNode)(self.count, arrayUpdate(frag, newChild, self.children))));
 }));
 (alter = (function(shift, f, h, k, n) {
     return (isEmpty(n) ? alterEmpty(shift, f, h, k) : n.modify(shift, f, h, k));
@@ -177,6 +177,48 @@ var del = constant(nothing);
 (remove = (function(k, m) {
     return removeHash(hash(k), k, m);
 }));
+(Leaf.prototype.fold = (function(f, z) {
+    var self = this;
+    return f(z, [self.key, self.value]);
+}));
+(Collision.prototype.fold = (function(f, z) {
+    var self = this;
+    return self.list.reduce(f, z);
+}));
+(InternalNode.prototype.fold = (function(f, z) {
+    var self = this;
+    return self.children.reduce(fold.bind(null, f), z);
+}));
+(fold = (function(f, z, m) {
+    return (isEmpty(m) ? z : m.fold(f, z));
+}));
+(count = fold.bind(null, (function(x, y) {
+        return (x + y);
+    })
+    .bind(null, 1), 0));
+var build = (function(p, c) {
+    p.push(c);
+    return p;
+});
+(pairs = (function(m) {
+    return fold(build, [], m);
+}));
+var build0 = (function(p, __o) {
+    var k = __o[0];
+    p.push(k);
+    return p;
+});
+(keys = (function(m) {
+    return fold(build0, [], m);
+}));
+var build1 = (function(p, __o) {
+    var v = __o[1];
+    p.push(v);
+    return p;
+});
+(values = (function(m) {
+    return fold(build1, [], m);
+}));
 (exports.hash = hash);
 (exports.empty = empty);
 (exports.getHash = getHash);
@@ -187,3 +229,8 @@ var del = constant(nothing);
 (exports.modify = modify);
 (exports.removeHash = removeHash);
 (exports.remove = remove);
+(exports.fold = fold);
+(exports.pairs = pairs);
+(exports.count = count);
+(exports.keys = keys);
+(exports.values = values);

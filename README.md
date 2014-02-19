@@ -60,7 +60,7 @@ ht.get('b', h2); // 'y'
 
 
 // modify an entry
-h2 = ht.modify('b', function(x) { return x + 'z'; }, h2);
+h2 = ht.modify('b', \x -> x + 'z', h2);
 ht.get('b', h2); // 'yz'
 
 // remove an entry
@@ -79,6 +79,22 @@ var h2 = ht.setHash(0, 'b', 'y', h1);
 
 ht.get('a', h2); // 'x'
 ht.get('b', h2); // 'y'
+
+
+// Aggregate Info
+var h = ht.set('b', 'y', ht.set('a', 'x', ht.empty));
+
+ht.count(h); //2
+ht.keys(h); // ['b', 'a'];
+ht.values(h); // ['y', 'x'];
+ht.pairs(h); // [['b', 'y'], ['a', 'x']];
+
+// Fold
+var h = ht.set('a', 10, h.set('b', 4, ht.set('c', -2, ht.empty)));
+
+var sum = ht.fold@(\p, [key, value] -> p + value, 0);
+
+sum(h); //12
 ```
 
 
