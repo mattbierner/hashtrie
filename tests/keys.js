@@ -15,7 +15,7 @@ exports.empty = function(test) {
     test.done();
 };
 
-exports.simple_keys= function(test) {
+exports.simple_keys = function(test) {
     var h1 = ht.set('b', 5, ht.set('a', 3, ht.empty));
     
     containsAll(test,

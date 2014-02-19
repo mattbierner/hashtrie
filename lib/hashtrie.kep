@@ -8,6 +8,8 @@ package(
     
     empty
     
+    isHashTrie
+    
     getHash
     get
     
@@ -58,6 +60,9 @@ var hashFragment = \shift h ->
  * http://stackoverflow.com/questions/7616461/generate-a-hash-from-string-in-javascript-jquery
  */
 hash = \str -> {
+    if (typeof str === 'number')
+        return str;
+    
     var hash = 0;
     for (var i = 0, len = str.length; i < len; i = i + 1)
     with char = str.charCodeAt(i) in {
@@ -305,6 +310,17 @@ alter = \shift f h k n ->
     ?isEmpty n
         :alterEmpty(shift, f, h, k)
         :n.modify(shift, f, h, k);
+
+/*
+ ******************************************************************************/
+/**
+ * Is an object a hashtrie?
+ */
+isHashTrie = \m ->
+    (  m === empty
+    || m instanceof Leaf
+    || m instanceof InternalNode
+    || m instanceof Collision);
 
 /* Single Updates
  ******************************************************************************/

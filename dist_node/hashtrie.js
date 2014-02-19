@@ -3,8 +3,8 @@
  * DO NOT EDIT
 */
 "use strict";
-var hash, empty, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, fold, pairs, count, keys, values,
-        size = 4,
+var hash, empty, isHashTrie, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, fold, pairs, count,
+        keys, values, size = 4,
     BUCKET_SIZE = Math.pow(2, size),
     mask = (BUCKET_SIZE - 1),
     constant = (function(x) {
@@ -21,6 +21,7 @@ var hash, empty, getHash, get, setHash, set, modifyHash, modify, removeHash, rem
         return ((h >>> shift) & mask);
     });
 (hash = (function(str) {
+    if (((typeof str) === "number")) return str;
     var hash = 0;
     for (var i = 0, len = str.length;
         (i < len);
@@ -152,6 +153,9 @@ var alter, alterEmpty = (function(_, f, h, k) {
 (alter = (function(shift, f, h, k, n) {
     return (isEmpty(n) ? alterEmpty(shift, f, h, k) : n.modify(shift, f, h, k));
 }));
+(isHashTrie = (function(m) {
+    return ((((m === empty) || (m instanceof Leaf)) || (m instanceof InternalNode)) || (m instanceof Collision));
+}));
 (getHash = (function(h, k, m) {
     return lookup(0, h, k, m);
 }));
@@ -221,6 +225,7 @@ var build1 = (function(p, __o) {
 }));
 (exports.hash = hash);
 (exports.empty = empty);
+(exports.isHashTrie = isHashTrie);
 (exports.getHash = getHash);
 (exports.get = get);
 (exports.setHash = setHash);

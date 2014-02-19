@@ -4,8 +4,8 @@
 */
 define(["require", "exports"], (function(require, exports) {
     "use strict";
-    var hash, empty, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, fold, pairs, count,
-            keys, values, size = 4,
+    var hash, empty, isHashTrie, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, fold,
+            pairs, count, keys, values, size = 4,
         BUCKET_SIZE = Math.pow(2, size),
         mask = (BUCKET_SIZE - 1),
         constant = (function(x) {
@@ -22,6 +22,7 @@ define(["require", "exports"], (function(require, exports) {
             return ((h >>> shift) & mask);
         });
     (hash = (function(str) {
+        if (((typeof str) === "number")) return str;
         var hash = 0;
         for (var i = 0, len = str.length;
             (i < len);
@@ -157,6 +158,9 @@ define(["require", "exports"], (function(require, exports) {
     (alter = (function(shift, f, h, k, n) {
         return (isEmpty(n) ? alterEmpty(shift, f, h, k) : n.modify(shift, f, h, k));
     }));
+    (isHashTrie = (function(m) {
+        return ((((m === empty) || (m instanceof Leaf)) || (m instanceof InternalNode)) || (m instanceof Collision));
+    }));
     (getHash = (function(h, k, m) {
         return lookup(0, h, k, m);
     }));
@@ -226,6 +230,7 @@ define(["require", "exports"], (function(require, exports) {
     }));
     (exports.hash = hash);
     (exports.empty = empty);
+    (exports.isHashTrie = isHashTrie);
     (exports.getHash = getHash);
     (exports.get = get);
     (exports.setHash = setHash);

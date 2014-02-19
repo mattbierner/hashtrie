@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 0.1.1 - Feb 19, 2014
+* Updated internal hash function to return numbers directly that are passed to it.
+
 ## 0.1.0 - Feb 18, 2014
 * Added aggregate operations
 ** `fold` - collect data.
