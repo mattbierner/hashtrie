@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 0.1.2 - Feb 19, 2014
+* Fixed spelling error for package.json main.
+
 ## 0.1.1 - Feb 19, 2014
 * Updated internal hash function to return numbers directly that are passed to it.
 

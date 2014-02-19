@@ -1,6 +1,6 @@
 {
     "name": "hashtrie",
-    "version": "0.1.1",
+    "version": "0.1.2",
     "description": "Hash Trie",
     "keywords": [
         "trie",
@@ -16,7 +16,7 @@
         "url": "https://github.com/mattbierner/hashtrie.git"
     },
     
-    "main": "dist_node/hastrie.js",
+    "main": "dist_node/hashtrie.js",
     "directories": {
         "lib": "dist_node"
     },
