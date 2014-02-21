@@ -10,7 +10,7 @@ arrays. [Benchmarks show][benchmark] that this library performs well, even for l
 
 Hashtrie is faster than HAMT for gets and updates, but has significantly worse
 fold performance. HAMT index nodes are stored in a dense array, while hashtrie's sparse
-arrays have [a lot of overhead for folds][http://jsperf.com/sparse-array-reduce-overhead].
+arrays have [a lot of overhead for folds](http://jsperf.com/sparse-array-reduce-overhead).
 
 
 ## Install
