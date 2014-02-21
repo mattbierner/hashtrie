@@ -44,6 +44,7 @@ exports.many = function(test) {
             ht.count(h),
             i + 1);
     }
+    ht.fold(console.log, null, h);
     
     for (var i = 0; i < remove.length; ++i) {
         h = ht.remove(remove[i], h);

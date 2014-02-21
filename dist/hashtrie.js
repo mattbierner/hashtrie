@@ -41,10 +41,10 @@ define(["require", "exports"], (function(require, exports) {
         (self.key = key);
         (self.value = value);
     }),
-        Collision = (function(hash, list) {
+        Collision = (function(hash, children) {
             var self = this;
             (self.hash = hash);
-            (self.list = list);
+            (self.children = children);
         }),
         InternalNode = (function(count, children) {
             var self = this;
@@ -85,7 +85,7 @@ define(["require", "exports"], (function(require, exports) {
         updateCollisionList = (function(list, f, k) {
             var first, rest, v;
             return ((!list.length) ? [] : ((first = list[0]), (rest = list.slice(1)), ((first.key === k) ?
-                ((v = f(first)), (isNothing(v) ? rest : [v].concat(rest))) : [first].concat(
+                ((v = f(first.value)), (isNothing(v) ? rest : [v].concat(rest))) : [first].concat(
                     updateCollisionList(rest, f, k)))));
         }),
         lookup;
@@ -95,10 +95,10 @@ define(["require", "exports"], (function(require, exports) {
     }));
     (Collision.prototype.get = (function(_, _0, k) {
         var self = this;
-        for (var i = 0, len = self.list.length;
+        for (var i = 0, len = self.children.length;
             (i < len);
             (i = (i + 1))) {
-            var __o = self.list[i],
+            var __o = self.children[i],
                 key = __o["key"],
                 value = __o["value"];
             if ((k === key)) return value;
@@ -121,11 +121,11 @@ define(["require", "exports"], (function(require, exports) {
     (Leaf.prototype.modify = (function(shift, f, h, k) {
         var v, v0, self = this;
         return ((k === self.key) ? ((v = f(self.value)), (isNothing(v) ? empty : new(Leaf)(h, k, v))) :
-            ((v0 = f()), (isNothing(v0) ? self : mergeLeaves(shift, self, new(Leaf)(h, k, v0)))));
+            ((v0 = f()), (isNothing(v0) ? empty : mergeLeaves(shift, self, new(Leaf)(h, k, v0)))));
     }));
     (Collision.prototype.modify = (function(shift, f, h, k) {
         var self = this,
-            list = updateCollisionList(self.list, f, k);
+            list = updateCollisionList(self.children, f, k);
         return ((list.length > 1) ? new(Collision)(self.hash, list) : list[0]);
     }));
     (InternalNode.prototype.modify = (function(shift, f, h, k) {
@@ -187,12 +187,21 @@ define(["require", "exports"], (function(require, exports) {
         return f(z, self);
     }));
     (Collision.prototype.fold = (function(f, z) {
-        var self = this;
-        return self.list.reduce(f, z);
+        var __o = this,
+            children = __o["children"];
+        return children.reduce(f, z);
     }));
     (InternalNode.prototype.fold = (function(f, z) {
-        var self = this;
-        return self.children.reduce(fold.bind(null, f), z);
+        var __o = this,
+            children = __o["children"],
+            z1 = z;
+        for (var i = 0, len = children.length;
+            (i < len);
+            (i = (i + 1))) {
+            var c = children[i];
+            if (c)(z1 = ((c instanceof Leaf) ? f(z1, c) : c.fold(f, z1)));
+        }
+        return z1;
     }));
     (fold = (function(f, z, m) {
         return (isEmpty(m) ? z : m.fold(f, z));

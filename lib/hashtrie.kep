@@ -109,11 +109,11 @@ var Leaf = function \hash key value =self-> {
  * Leaf holding multiple values with the same hash but different keys.
  * 
  * @member hash Hash of key.
- * @member list Array of key value pairs.
+ * @member children Array of collision nodes.
  */
-var Collision = function \hash list =self-> {
+var Collision = function \hash children =self-> {
     self.hash = hash;
-    self.list = list;
+    self.children = children;
 };
 
 /**
@@ -205,7 +205,7 @@ var updateCollisionList = \list f k ->
         :[]
         :let first = list.(0), rest = list.slice(1) in
             ?first.key === k
-                :let v = f(first) in
+                :let v = f(first.value) in
                     ?isNothing v
                         :rest
                         :[v].concat(rest)
@@ -227,8 +227,8 @@ Leaf.prototype.get = \_ _ k =self->
  * Collision::get
  */
 Collision.prototype.get = \_ _ k =self-> {
-    for (var i = 0, len = self.list.length; i < len; i = i + 1)
-    with {key value} = self.list.(i) in {
+    for (var i = 0, len = self.children.length; i < len; i = i + 1)
+    with {key value} = self.children.(i) in {
         if (k === key)
             return value;
     }
@@ -274,14 +274,14 @@ Leaf.prototype.modify = \shift f h k =self->
                 :new Leaf(h, k, v)
         :let v = f() in
             ?isNothing v
-                :self
+                :empty
                 :mergeLeaves(shift, self, new Leaf(h, k, v));
 
 /**
  * Collision::modify
  */
 Collision.prototype.modify = \shift f h k =self-> let
-    list = updateCollisionList(self.list, f, k)
+    list = updateCollisionList(self.children, f, k)
 in
     ?list.length > 1
         :new Collision(self.hash, list)
@@ -463,14 +463,23 @@ Leaf.prototype.fold = \f z =self->
 /**
  * Collision::fold
  */
-Collision.prototype.fold = \f z =self->
-    self.list.reduce(f, z);
+Collision.prototype.fold = \f z ={children}->
+    children.reduce(f, z);
 
 /**
  * InternalNode::get
  */
-InternalNode.prototype.fold = \f z =self->
-    self.children.reduce(fold@f, z);
+InternalNode.prototype.fold = \f z ={children}-> {
+    var z1 = z;
+    for (var i = 0, len = children.length; i < len; i = i + 1)
+    with c = children.(i) in {
+        if (c)
+            z1 = ?c instanceof Leaf
+                :f(z1, c)
+                :c.fold(f, z1);
+    }
+    return z1;
+};
 
 /**
  * Visit every entry in the map, aggregating data.
