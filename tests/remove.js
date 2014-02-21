@@ -85,7 +85,9 @@ exports.remove_many = function(test) {
                 ht.get(remove[g], h),
                 remove[g]);
         }
-    }
+    } 
+    
+    
 
     test.done();
 };

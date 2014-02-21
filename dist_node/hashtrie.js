@@ -3,8 +3,8 @@
  * DO NOT EDIT
 */
 "use strict";
-var hash, empty, isHashTrie, getHash, get, setHash, set, modifyHash, modify, removeHash, remove, fold, pairs, count,
-        keys, values, size = 4,
+var hash, empty, isHashTrie, tryGetHash, tryGet, getHash, get, hasHash, has, setHash, set, modifyHash, modify,
+        removeHash, remove, fold, pairs, count, keys, values, size = 4,
     BUCKET_SIZE = Math.pow(2, size),
     mask = (BUCKET_SIZE - 1),
     constant = (function(x) {
@@ -12,11 +12,13 @@ var hash, empty, isHashTrie, getHash, get, setHash, set, modifyHash, modify, rem
             return x;
         });
     }),
-    nothing = null,
-    isNothing = (function(x, y) {
-        return (x === y);
-    })
-        .bind(null, nothing),
+    nothing = ({}),
+    isNothing = (function(x) {
+        return (x === nothing);
+    }),
+    maybe = (function(val, alt) {
+        return (isNothing(val) ? alt : val);
+    }),
     hashFragment = (function(shift, h) {
         return ((h >>> shift) & mask);
     });
@@ -52,53 +54,34 @@ var Leaf = (function(hash, key, value) {
         return (!x);
     }),
     arrayUpdate = (function(at, v, arr) {
-        var out = [];
-        for (var i = 0, len = arr.length;
-            (i < len);
-            (i = (i + 1))) {
-            var e = arr[i];
-            if ((!isEmpty(e)))(out[i] = e);
-        }
+        var out = arr.slice();
         (out[at] = v);
         return out;
     }),
     arrayRemove = (function(at, arr) {
-        var out = [];
-        for (var i = 0, len = arr.length;
-            (i < len);
-            (i = (i + 1)))
-            if (((i !== at) && (!isEmpty(arr[i]))))(out[i] = arr[i]);
+        var out = arr.slice();
+        (delete out[at]);
         return out;
     }),
     createInternal = (function(pairs) {
         var children = [];
         for (var i = 0, len = pairs.length;
             (i < len);
-            (i = (i + 1))) {
-            var __o = pairs[i],
-                frag = __o[0],
-                node = __o[1];
-            (children[frag] = node);
-        }
+            (i = (i + 2)))(children[pairs[i]] = pairs[(i + 1)]);
         return new(InternalNode)(pairs.length, children);
     }),
     mergeLeaves = (function(shift, n1, n2) {
-        var h1, h2, subH1, subH2;
-        return (isEmpty(n2) ? n1 : ((h1 = n1.hash), (h2 = n2.hash), ((h1 === h2) ? new(Collision)(h1, [
-            [n2.key, n2.value],
-            [n1.key, n1.value]
-        ]) : ((subH1 = hashFragment(shift, h1)), (subH2 = hashFragment(shift, h2)), createInternal(((
-            subH1 === subH2) ? [
-            [subH1, mergeLeaves((shift + size), n1, n2)]
-        ] : [
-            [subH1, n1],
-            [subH2, n2]
-        ]))))));
+        var subH1, subH2, h1 = n1.hash,
+            h2 = n2.hash;
+        return ((h1 === h2) ? new(Collision)(h1, [n2, n1]) : ((subH1 = hashFragment(shift, h1)), (subH2 =
+            hashFragment(shift, h2)), createInternal(((subH1 === subH2) ? [subH1, mergeLeaves((shift + size),
+            n1, n2)] : [subH1, n1, subH2, n2]))));
     }),
     updateCollisionList = (function(list, f, k) {
         var first, rest, v;
-        return ((!list.length) ? [] : ((first = list[0]), (rest = list.slice(1)), ((first[0] === k) ? ((v = f(first)), (
-            isNothing(v) ? rest : [v].concat(rest))) : [first].concat(updateCollisionList(rest, f, k)))));
+        return ((!list.length) ? [] : ((first = list[0]), (rest = list.slice(1)), ((first.key === k) ? ((v = f(
+            first)), (isNothing(v) ? rest : [v].concat(rest))) : [first].concat(updateCollisionList(
+            rest, f, k)))));
     }),
     lookup;
 (Leaf.prototype.get = (function(_, _0, k) {
@@ -111,8 +94,8 @@ var Leaf = (function(hash, key, value) {
         (i < len);
         (i = (i + 1))) {
         var __o = self.list[i],
-            key = __o[0],
-            value = __o[1];
+            key = __o["key"],
+            value = __o["value"];
         if ((k === key)) return value;
     }
     return nothing;
@@ -127,18 +110,18 @@ var Leaf = (function(hash, key, value) {
     return (isEmpty(n) ? nothing : n.get(shift, h, k));
 }));
 var alter, alterEmpty = (function(_, f, h, k) {
-        var v = f(nothing);
+        var v = f();
         return (isNothing(v) ? empty : new(Leaf)(h, k, v));
     });
 (Leaf.prototype.modify = (function(shift, f, h, k) {
-    var v, self = this;
-    return ((k === self.key) ? ((v = f(self.value)), (isNothing(v) ? empty : new(Leaf)(h, k, v))) : mergeLeaves(
-        shift, self, alterEmpty(shift, f, h, k)));
+    var v, v0, self = this;
+    return ((k === self.key) ? ((v = f(self.value)), (isNothing(v) ? empty : new(Leaf)(h, k, v))) : ((v0 = f()), (
+        isNothing(v0) ? self : mergeLeaves(shift, self, new(Leaf)(h, k, v0)))));
 }));
 (Collision.prototype.modify = (function(shift, f, h, k) {
     var self = this,
         list = updateCollisionList(self.list, f, k);
-    return ((list.length > 1) ? new(Collision)(self.hash, list) : new(Leaf)(h, list[0][0], list[0][1]));
+    return ((list.length > 1) ? new(Collision)(self.hash, list) : list[0]);
 }));
 (InternalNode.prototype.modify = (function(shift, f, h, k) {
     var self = this,
@@ -156,11 +139,19 @@ var alter, alterEmpty = (function(_, f, h, k) {
 (isHashTrie = (function(m) {
     return ((((m === empty) || (m instanceof Leaf)) || (m instanceof InternalNode)) || (m instanceof Collision));
 }));
-(getHash = (function(h, k, m) {
-    return lookup(0, h, k, m);
+(tryGetHash = (function(alt, h, k, m) {
+    return maybe(lookup(0, h, k, m), alt);
 }));
-(get = (function(k, m) {
-    return getHash(hash(k), k, m);
+(tryGet = (function(alt, k, m) {
+    return tryGetHash(alt, hash(k), k, m);
+}));
+(getHash = tryGetHash.bind(null, null));
+(get = tryGet.bind(null, null));
+(hasHash = (function(h, k, m) {
+    return (!isNothing(lookup(0, h, k, m)));
+}));
+(has = (function(k, m) {
+    return hasHash(hash(k), k, m);
 }));
 (modifyHash = (function(h, k, f, m) {
     return alter(0, f, h, k, m);
@@ -183,7 +174,7 @@ var del = constant(nothing);
 }));
 (Leaf.prototype.fold = (function(f, z) {
     var self = this;
-    return f(z, [self.key, self.value]);
+    return f(z, self);
 }));
 (Collision.prototype.fold = (function(f, z) {
     var self = this;
@@ -200,24 +191,26 @@ var del = constant(nothing);
         return (x + y);
     })
     .bind(null, 1), 0));
-var build = (function(p, c) {
-    p.push(c);
+var build = (function(p, __o) {
+    var key = __o["key"],
+        value = __o["value"];
+    p.push([key, value]);
     return p;
 });
 (pairs = (function(m) {
     return fold(build, [], m);
 }));
 var build0 = (function(p, __o) {
-    var k = __o[0];
-    p.push(k);
+    var key = __o["key"];
+    p.push(key);
     return p;
 });
 (keys = (function(m) {
     return fold(build0, [], m);
 }));
 var build1 = (function(p, __o) {
-    var v = __o[1];
-    p.push(v);
+    var value = __o["value"];
+    p.push(value);
     return p;
 });
 (values = (function(m) {
@@ -226,8 +219,12 @@ var build1 = (function(p, __o) {
 (exports.hash = hash);
 (exports.empty = empty);
 (exports.isHashTrie = isHashTrie);
+(exports.tryGetHash = tryGetHash);
+(exports.tryGet = tryGet);
 (exports.getHash = getHash);
 (exports.get = get);
+(exports.hasHash = hasHash);
+(exports.has = has);
 (exports.setHash = setHash);
 (exports.set = set);
 (exports.modifyHash = modifyHash);

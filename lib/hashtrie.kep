@@ -9,10 +9,18 @@ package(
     empty
     
     isHashTrie
+
+// Queries
+    tryGetHash
+    tryGet
     
     getHash
     get
     
+    hasHash
+    has
+    
+// Updates
     setHash
     set
     
@@ -21,7 +29,8 @@ package(
     
     removeHash
     remove
-    
+
+// Aggregate
     fold
     pairs
     count
@@ -42,9 +51,14 @@ var constant = \x -> \() -> x;
 
 /* Nothing
  ******************************************************************************/
-var nothing = null;
+var nothing = ({});
 
-var isNothing = (===)@nothing;
+var isNothing = \x -> x === nothing;
+
+var maybe = \val alt ->
+    ?isNothing val
+        :alt
+        :val;
 
 /* Bit Ops
  ******************************************************************************/
@@ -127,12 +141,7 @@ var isEmpty = (!);
  * @param arr Array.
  */
 var arrayUpdate = \at v arr -> {
-    var out = [];
-    for (var i = 0, len = arr.length; i < len; i = i + 1)
-    with e = arr.(i) in {
-        if (!isEmpty e)
-            out.(i) = e;
-    }
+    var out = arr.slice();
     out.(at) = v;
     return out;
 };
@@ -144,54 +153,50 @@ var arrayUpdate = \at v arr -> {
  * @param arr Array.
  */
 var arrayRemove = \at arr -> {
-    var out = [];
-    for (var i = 0, len = arr.length; i < len; i = i + 1)
-        if (i !== at && !isEmpty arr.(i))
-            out.(i) = arr.(i);
+    var out = arr.slice();
+    delete out.(at);
     return out;
 };
 
 /**
- * Create an internal node from a list of pairs.
+ * Create an internal node with one child
  */
-var createInternal = \pairs -> {
+var create1Internal = \h n -> {
     var children = [];
-    
-    for (var i = 0, len = pairs.length; i < len; i = i + 1)
-    with [frag node] = pairs.(i) in {
-        children.(frag) = node;
-    }
-    
-    return new InternalNode(pairs.length, children);
+    children.(h) = n;
+    return new InternalNode(1, children);
+};
+
+/**
+ * Create an internal node with two children
+ */
+var create1Internal = \h1 n1 h2 n2 -> {
+    var children = [];
+    children.(h1) = n1;
+    children.(h2) = n2;
+    return new InternalNode(2, children);
 };
 
 /**
  * Merge two leaf nodes.
  * 
  * @param shift Current shift.
- * @param n1 Node.
  * @param n2 Node.
+ * @param n2 Node
  */
-var mergeLeaves = \shift n1 n2 ->
-    ?isEmpty n2
-        :n1 
+var mergeLeaves = \shift n1 n2 -> let
+    h1 = n1.hash,
+    h2 = n2.hash
+in
+    ?h1 === h2
+        :new Collision(h1, [n2, n1])
         :let
-            h1 = n1.hash,
-            h2 = n2.hash
+            subH1 = hashFragment(shift, h1),
+            subH2 = hashFragment(shift, h2)
         in
-            ?h1 === h2
-                :new Collision(h1, [
-                    [n2.key, n2.value],
-                    [n1.key, n1.value]])
-                :let
-                    subH1 = hashFragment(shift, h1),
-                    subH2 = hashFragment(shift, h2)
-                in
-                    createInternal(
-                        ?subH1 === subH2
-                            :[[subH1, mergeLeaves(shift + size, n1, n2)]]
-                            :[[subH1, n1], [subH2, n2]]);
-
+            ?subH1 === subH2
+                :create1Internal(subH1, mergeLeaves(shift + size, n1, n2)),
+                :create2Internal(subH1, n1, subH2, n2);
 /**
  * Update an entry in a collision list.
  */
@@ -199,7 +204,7 @@ var updateCollisionList = \list f k ->
     ? !list.length
         :[]
         :let first = list.(0), rest = list.slice(1) in
-            ?first.(0) === k
+            ?first.key === k
                 :let v = f(first) in
                     ?isNothing v
                         :rest
@@ -223,7 +228,7 @@ Leaf.prototype.get = \_ _ k =self->
  */
 Collision.prototype.get = \_ _ k =self-> {
     for (var i = 0, len = self.list.length; i < len; i = i + 1)
-    with [key value] = self.list.(i) in {
+    with {key value} = self.list.(i) in {
         if (k === key)
             return value;
     }
@@ -252,7 +257,7 @@ var alter;
  * empty::alter
  */
 var alterEmpty = \_ f h k -> let
-    v = f(nothing)
+    v = f()
 in
     ?isNothing v
         :empty
@@ -267,7 +272,10 @@ Leaf.prototype.modify = \shift f h k =self->
             ?isNothing v
                 :empty
                 :new Leaf(h, k, v)
-        :mergeLeaves(shift, self, alterEmpty(shift, f, h, k));
+        :let v = f() in
+            ?isNothing v
+                :self
+                :mergeLeaves(shift, self, new Leaf(h, k, v));
 
 /**
  * Collision::modify
@@ -277,7 +285,7 @@ Collision.prototype.modify = \shift f h k =self-> let
 in
     ?list.length > 1
         :new Collision(self.hash, list)
-        :new Leaf(h, list.(0).(0), list.(0).(1));
+        :list.(0);
 
 /**
  * InternalNode::modify
@@ -322,10 +330,31 @@ isHashTrie = \m ->
     || m instanceof InternalNode
     || m instanceof Collision);
 
-/* Single Updates
+/* Queries
  ******************************************************************************/
 /**
- * Lookup a value using the internal `hash` function to calculate the hash from `key`
+ * Lookup a value.
+ * 
+ * Returns the value stored for the given hash and key, or alt if none.
+ * 
+ * @param alt Fallback value.
+ * @param h 32 bit hash.
+ * @param k Key.
+ * @param m Hashtrie
+ */
+tryGetHash = \alt h k m  ->
+    maybe(lookup(0, h, k, m), alt);
+
+/**
+ * Lookup a value using the internal `hash`.
+ * 
+ * @see getHash
+ */
+tryGet = \alt k m ->
+    tryGetHash(alt, hash k, k, m);
+
+/**
+ * Lookup a value.
  * 
  * Returns the value stored for the given hash an key or null if none.
  * 
@@ -333,17 +362,35 @@ isHashTrie = \m ->
  * @param k Key.
  * @param m Hashtrie
  */
-getHash = \h k m ->
-    lookup(0, h, k, m);
+getHash = \h k m -> maybe(lookup(0, h, k, m), null);
 
 /**
- * Lookup a value using the internal `hash` function to calculate the hash from `key`
+ * Lookup a value using the internal `hash`.
  * 
  * @see getHash
  */
-get = \k m ->
-    getHash(hash k, k, m);
+get = \k m -> getHash(hash k, k, m);
 
+/**
+ * Does an entry exist?
+ * 
+ * @param h 32 bit hash.
+ * @param k Key.
+ * @param m Hashtrie
+ */
+hasHash = \h k m ->
+    !isNothing lookup(0, h, k, m);
+
+/**
+ * Check if a an entry exists using internal `hash`
+ * 
+ * @see hashHash
+ */
+has = \k m ->
+    hasHash(hash k, k, m);
+
+/* Single Updates
+ ******************************************************************************/
 /**
  * Modify the value stored for a hash.
  * 
@@ -409,7 +456,7 @@ remove = \k m ->
  * Leaf::fold
  */
 Leaf.prototype.fold = \f z =self->
-    f(z, [self.key, self.value]);
+    f(z, self);
 
 /**
  * Collision::fold
@@ -428,7 +475,7 @@ InternalNode.prototype.fold = \f z =self->
  * 
  * Order of nodes is not guaranteed.
  * 
- * @param f Function mapping previous value and key value pair to new value.
+ * @param f Function mapping previous value and key value object to new value.
  * @param z Starting value.
  * @param m Hashtrie
  */
@@ -445,11 +492,11 @@ fold = \f z m ->
 count = fold@((+)@1, 0);
 
 /**
- * Get array of all key value pairs.
+ * Get array of all key value pairs as arrays of [key, value].
  * 
  * Order is not guaranteed.
  */
-pairs = let build = \p c -> { p.push(c); return p; } in
+pairs = let build = \p {key value} -> { p.push [key, value]; return p; } in
     \m ->
         fold(build, [], m);
 
@@ -458,7 +505,7 @@ pairs = let build = \p c -> { p.push(c); return p; } in
  * 
  * Order is not guaranteed.
  */
-keys = let build = \p [k _] -> { p.push(k); return p; } in
+keys = let build = \p {key} -> { p.push key; return p; } in
     \m ->
         fold(build, [], m);
 
@@ -467,7 +514,7 @@ keys = let build = \p [k _] -> { p.push(k); return p; } in
  * 
  * Order is not guaranteed, duplicates will be preserved.
  */
-values = let build = \p [_ v] -> { p.push(v); return p; } in
+values = let build = \p {value} -> { p.push value; return p; } in
     \m ->
         fold(build, [], m);
 

@@ -84,7 +84,7 @@ ht.get('b', h2); // 'y'
 // Aggregate Info
 var h = ht.set('b', 'y', ht.set('a', 'x', ht.empty));
 
-ht.count(h); //2
+ht.count(h); // 2
 ht.keys(h); // ['b', 'a'];
 ht.values(h); // ['y', 'x'];
 ht.pairs(h); // [['b', 'y'], ['a', 'x']];

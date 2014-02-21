@@ -13,7 +13,7 @@ define(["require", "exports"], (function(require, exports) {
                 return x;
             });
         }),
-        nothing = null,
+        nothing = ({}),
         isNothing = (function(x, y) {
             return (x === y);
         })

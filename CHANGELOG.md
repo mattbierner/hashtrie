@@ -1,5 +1,14 @@
 # ChangeLog #
 
+## 0.2.0 - Feb 20, 2014
+* 4x performance boost.
+* Null values can be stored in map.
+* Added `has` to check if an entry exists.
+* Added `tryGet` to get a value or return a default.
+* fold takes an object with `key` and `value` properties instead of array.
+* Modify on an empty node is called with no value (arity 0) instead of with null.
+
+
 ## 0.1.2 - Feb 19, 2014
 * Fixed spelling error for package.json main.
 

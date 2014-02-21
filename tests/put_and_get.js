@@ -8,9 +8,17 @@ exports.single = function(test) {
     test.done();
 };
 
+exports.put_falsey = function(test) {
+    var h = ht.set('a', null, ht.empty);
+    test.equal(ht.get('a', h), null);
+    
+    test.done();
+};
+
 exports.get_non_existant_empty = function(test) {
     test.equal(ht.get('a', ht.empty), null);
-    
+    test.equal(ht.tryGet('def', 'a', ht.empty), 'def');
+
     test.done();
 };
 
