@@ -6,7 +6,7 @@ The [hash trie][hash-trie] is a [persistent][persistent]
 map data structure with good lookup and update performance.
 
 This is a fork from [HAMT][hamt] that only uses array nodes of sparse Javascript
-arrays.
+arrays. [Benchmarks show][benchmark] that this library performs well, even for large maps.
 
 ## Install
 
@@ -58,6 +58,15 @@ ht.get('b', h1); // null
 ht.get('a', h2); // 'x'
 ht.get('b', h2); // 'y'
 
+// set if an entry exists
+var h = ht.set('b', 'y', ht.set('a', 'x', ht.empty));
+
+ht.has('b', h); // true
+ht.has('w', h); // false
+
+// Get with default value
+ht.tryGet('default', 'b', h); // 'y'
+ht.tryGet('default', 'w', h); // 'default'
 
 // modify an entry
 h2 = ht.modify('b', \x -> x + 'z', h2);
@@ -101,3 +110,4 @@ sum(h); //12
 [hamt]: https://github.com/mattbierner/hamt
 [hash-trie]: http://en.wikipedia.org/wiki/Hash_tree_(persistent_data_structure)
 [persistent]: http://en.wikipedia.org/wiki/Persistent_data_structure
+[benchmark]: https://github.com/mattbierner/js-hashtrie-benchmark
