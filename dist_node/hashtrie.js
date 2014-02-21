@@ -63,19 +63,23 @@ var Leaf = (function(hash, key, value) {
         (delete out[at]);
         return out;
     }),
-    createInternal = (function(pairs) {
+    create1Internal = (function(h, n) {
         var children = [];
-        for (var i = 0, len = pairs.length;
-            (i < len);
-            (i = (i + 2)))(children[pairs[i]] = pairs[(i + 1)]);
-        return new(InternalNode)(pairs.length, children);
+        (children[h] = n);
+        return new(InternalNode)(1, children);
+    }),
+    create2Internal = (function(h1, n1, h2, n2) {
+        var children = [];
+        (children[h1] = n1);
+        (children[h2] = n2);
+        return new(InternalNode)(2, children);
     }),
     mergeLeaves = (function(shift, n1, n2) {
         var subH1, subH2, h1 = n1.hash,
             h2 = n2.hash;
         return ((h1 === h2) ? new(Collision)(h1, [n2, n1]) : ((subH1 = hashFragment(shift, h1)), (subH2 =
-            hashFragment(shift, h2)), createInternal(((subH1 === subH2) ? [subH1, mergeLeaves((shift + size),
-            n1, n2)] : [subH1, n1, subH2, n2]))));
+            hashFragment(shift, h2)), ((subH1 === subH2) ? create1Internal(subH1, mergeLeaves((shift + size),
+            n1, n2)) : create2Internal(subH1, n1, subH2, n2))));
     }),
     updateCollisionList = (function(list, f, k) {
         var first, rest, v;
@@ -145,8 +149,12 @@ var alter, alterEmpty = (function(_, f, h, k) {
 (tryGet = (function(alt, k, m) {
     return tryGetHash(alt, hash(k), k, m);
 }));
-(getHash = tryGetHash.bind(null, null));
-(get = tryGet.bind(null, null));
+(getHash = (function(h, k, m) {
+    return maybe(lookup(0, h, k, m), null);
+}));
+(get = (function(k, m) {
+    return getHash(hash(k), k, m);
+}));
 (hasHash = (function(h, k, m) {
     return (!isNothing(lookup(0, h, k, m)));
 }));

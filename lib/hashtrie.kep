@@ -170,7 +170,7 @@ var create1Internal = \h n -> {
 /**
  * Create an internal node with two children
  */
-var create1Internal = \h1 n1 h2 n2 -> {
+var create2Internal = \h1 n1 h2 n2 -> {
     var children = [];
     children.(h1) = n1;
     children.(h2) = n2;
@@ -195,7 +195,7 @@ in
             subH2 = hashFragment(shift, h2)
         in
             ?subH1 === subH2
-                :create1Internal(subH1, mergeLeaves(shift + size, n1, n2)),
+                :create1Internal(subH1, mergeLeaves(shift + size, n1, n2))
                 :create2Internal(subH1, n1, subH2, n2);
 /**
  * Update an entry in a collision list.
@@ -362,14 +362,16 @@ tryGet = \alt k m ->
  * @param k Key.
  * @param m Hashtrie
  */
-getHash = \h k m -> maybe(lookup(0, h, k, m), null);
+getHash = \h k m ->
+    maybe(lookup(0, h, k, m), null);
 
 /**
  * Lookup a value using the internal `hash`.
  * 
  * @see getHash
  */
-get = \k m -> getHash(hash k, k, m);
+get = \k m ->
+    getHash(hash k, k, m);
 
 /**
  * Does an entry exist?
