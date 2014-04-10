@@ -1,5 +1,8 @@
 # ChangeLog #
 
+## 0.2.2 - April 10, 2014
+* Performance improvement from recompiled with Khepri V0.23.0 for inlining.
+
 ## 0.2.0 - Feb 20, 2014
 * 4x performance boost.
 * Null values can be stored in map.

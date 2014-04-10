@@ -87,7 +87,6 @@ exports.remove_many = function(test) {
         }
     } 
     
-    
 
     test.done();
 };

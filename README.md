@@ -8,9 +8,9 @@ map data structure with good lookup and update performance.
 This is a fork from [HAMT][hamt] that only uses array nodes of sparse Javascript
 arrays. [Benchmarks show][benchmark] that this library performs well, even for large maps.
 
-Hashtrie is faster than HAMT for gets and updates, but has significantly worse
-fold performance. HAMT index nodes are stored in a dense array, while hashtrie's sparse
-arrays have [a lot of overhead for folds](http://jsperf.com/sparse-array-reduce-overhead).
+Hashtrie is faster than HAMT in some cases for gets and updates,
+but has significantly worse fold performance. HAMT index nodes are stored in a
+dense array, while hashtrie's sparse arrays have [a lot of overhead for folds](http://jsperf.com/sparse-array-reduce-overhead).
 
 
 ## Install

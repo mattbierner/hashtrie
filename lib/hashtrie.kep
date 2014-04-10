@@ -39,30 +39,30 @@ package(
 {
 /* Configuration
  ******************************************************************************/
-var size = 4;
+var size := 4;
 
-var BUCKET_SIZE = Math.pow(2, size);
+var BUCKET_SIZE := Math.pow(2, size);
 
-var mask = BUCKET_SIZE - 1;
+var mask := BUCKET_SIZE - 1;
 
 /*
  ******************************************************************************/
-var constant = \x -> \() -> x;
+var constant := \x -> \ -> x;
 
 /* Nothing
  ******************************************************************************/
-var nothing = ({});
+var nothing := ({});
 
-var isNothing = \x -> x === nothing;
+var isNothing := (===, nothing);
 
-var maybe = \val alt ->
+var maybe := \val alt ->
     ?isNothing val
         :alt
         :val;
 
 /* Bit Ops
  ******************************************************************************/
-var hashFragment = \shift h ->
+var hashFragment := \shift h ->
     (h >>> shift) & mask;
 
 /* Hashing
@@ -90,7 +90,7 @@ hash = \str -> {
 /**
  * Empty node.
  */
-empty = null;
+empty := null;
 
 /**
  * Leaf holding a value.
@@ -99,7 +99,7 @@ empty = null;
  * @member key Key.
  * @member value Value stored.
  */
-var Leaf = function \hash key value =self-> {
+var Leaf := function \hash key value =self-> {
     self.hash = hash;
     self.key = key;
     self.value = value;
@@ -111,7 +111,7 @@ var Leaf = function \hash key value =self-> {
  * @member hash Hash of key.
  * @member children Array of collision nodes.
  */
-var Collision = function \hash children =self-> {
+var Collision := function \hash children =self-> {
     self.hash = hash;
     self.children = children;
 };
@@ -122,14 +122,14 @@ var Collision = function \hash children =self-> {
  * @member count Number of children.
  * @member children Array of child nodes.
  */
-var InternalNode = function \count children =self-> {
+var InternalNode := function \count children =self-> {
     self.count = count;
     self.children = children;
 };
 
 /* 
  ******************************************************************************/
-var isEmpty = (!);
+var isEmpty := (!);
 
 /**
  * Set a value in an array.
@@ -140,7 +140,7 @@ var isEmpty = (!);
  * @param v Value.
  * @param arr Array.
  */
-var arrayUpdate = \at v arr -> {
+var arrayUpdate := \at v arr -> {
     var out = arr.slice();
     out.(at) = v;
     return out;
@@ -152,7 +152,7 @@ var arrayUpdate = \at v arr -> {
  * @param at Index to remove.
  * @param arr Array.
  */
-var arrayRemove = \at arr -> {
+var arrayRemove := \at arr -> {
     var out = arr.slice();
     delete out.(at);
     return out;
@@ -161,7 +161,7 @@ var arrayRemove = \at arr -> {
 /**
  * Create an internal node with one child
  */
-var create1Internal = \h n -> {
+var create1Internal := \h n -> {
     var children = [];
     children.(h) = n;
     return new InternalNode(1, children);
@@ -170,7 +170,7 @@ var create1Internal = \h n -> {
 /**
  * Create an internal node with two children
  */
-var create2Internal = \h1 n1 h2 n2 -> {
+var create2Internal := \h1 n1 h2 n2 -> {
     var children = [];
     children.(h1) = n1;
     children.(h2) = n2;
@@ -184,7 +184,7 @@ var create2Internal = \h1 n1 h2 n2 -> {
  * @param n2 Node.
  * @param n2 Node
  */
-var mergeLeaves = \shift n1 n2 -> let
+var mergeLeaves := \shift n1 n2 -> let
     h1 = n1.hash,
     h2 = n2.hash
 in
@@ -197,10 +197,11 @@ in
             ?subH1 === subH2
                 :create1Internal(subH1, mergeLeaves(shift + size, n1, n2))
                 :create2Internal(subH1, n1, subH2, n2);
+
 /**
  * Update an entry in a collision list.
  */
-var updateCollisionList = \list f k ->
+var updateCollisionList := \list f k ->
     ? !list.length
         :[]
         :let first = list.(0), rest = list.slice(1) in
@@ -244,7 +245,7 @@ InternalNode.prototype.get = \shift h k =self-> let
 in
     lookup(shift + size, h, k, child);
 
-lookup = \shift h k n ->
+lookup := \shift h k n ->
     ?isEmpty n
         :nothing
         :n.get(shift, h, k);
@@ -274,7 +275,7 @@ Leaf.prototype.modify = \shift f h k =self->
                 :new Leaf(h, k, v)
         :let v = f() in
             ?isNothing v
-                :empty
+                :self
                 :mergeLeaves(shift, self, new Leaf(h, k, v));
 
 /**
@@ -324,7 +325,7 @@ alter = \shift f h k n ->
 /**
  * Is an object a hashtrie?
  */
-isHashTrie = \m ->
+isHashTrie := \m ->
     (  m === empty
     || m instanceof Leaf
     || m instanceof InternalNode
@@ -342,7 +343,7 @@ isHashTrie = \m ->
  * @param k Key.
  * @param m Hashtrie
  */
-tryGetHash = \alt h k m  ->
+tryGetHash := \alt h k m  ->
     maybe(lookup(0, h, k, m), alt);
 
 /**
@@ -350,7 +351,7 @@ tryGetHash = \alt h k m  ->
  * 
  * @see getHash
  */
-tryGet = \alt k m ->
+tryGet := \alt k m ->
     tryGetHash(alt, hash k, k, m);
 
 /**
@@ -362,7 +363,7 @@ tryGet = \alt k m ->
  * @param k Key.
  * @param m Hashtrie
  */
-getHash = \h k m ->
+getHash := \h k m ->
     maybe(lookup(0, h, k, m), null);
 
 /**
@@ -370,7 +371,7 @@ getHash = \h k m ->
  * 
  * @see getHash
  */
-get = \k m ->
+get := \k m ->
     getHash(hash k, k, m);
 
 /**
@@ -380,7 +381,7 @@ get = \k m ->
  * @param k Key.
  * @param m Hashtrie
  */
-hasHash = \h k m ->
+hasHash := \h k m ->
     !isNothing lookup(0, h, k, m);
 
 /**
@@ -388,7 +389,7 @@ hasHash = \h k m ->
  * 
  * @see hashHash
  */
-has = \k m ->
+has := \k m ->
     hasHash(hash k, k, m);
 
 /* Single Updates
@@ -403,7 +404,7 @@ has = \k m ->
  * @param f Function mapping current value to new value.
  * @param m Hashtrie
  */
-modifyHash = \h k f m ->
+modifyHash := \h k f m ->
     alter(0, f, h, k, m);
 
 /**
@@ -411,7 +412,7 @@ modifyHash = \h k f m ->
  * 
  * @see modifyHash
  */
-modify = \k f m ->
+modify := \k f m ->
     modifyHash(hash k, k, f, m);
 
 /**
@@ -422,7 +423,7 @@ modify = \k f m ->
  * @param v Value to store.
  * @param m Hashtrie
  */
-setHash = \h k v m ->
+setHash := \h k v m ->
     modifyHash(h, k, constant v, m);
 
 /**
@@ -430,7 +431,7 @@ setHash = \h k v m ->
  * 
  * @see setHash
  */
-set = \k v m ->
+set := \k v m ->
     setHash(hash k, k, v, m);
 
 /**
@@ -440,7 +441,7 @@ set = \k v m ->
  * @param h 32 bit hash.
  * @param k Key.
  */
-removeHash = let del = constant nothing in
+removeHash := let del = constant nothing in
     \h k m ->
         modifyHash(h, k, del, m);
 
@@ -449,7 +450,7 @@ removeHash = let del = constant nothing in
  * 
  * @see removeHash
  */
-remove = \k m ->
+remove := \k m ->
     removeHash(hash k, k, m);
 
 /* Fold
@@ -490,7 +491,7 @@ InternalNode.prototype.fold = \f z ={children}-> {
  * @param z Starting value.
  * @param m Hashtrie
  */
-fold = \f z m ->
+fold := \f z m ->
     ?isEmpty m
         :z
         :m.fold(f, z);
@@ -500,7 +501,7 @@ fold = \f z m ->
 /**
  * Get the number of entries.
  */
-count = fold@((+)@1, 0);
+count = fold @ (+, 1) @ 0;
 
 /**
  * Get array of all key value pairs as arrays of [key, value].
