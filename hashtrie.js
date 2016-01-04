@@ -20,14 +20,6 @@ var mask = BUCKET_SIZE - 1;
  ******************************************************************************/
 var nothing = {};
 
-var isNothing = function isNothing(x) {
-    return x === nothing;
-};
-
-var maybe = function maybe(val, alt) {
-    return isNothing(val) ? alt : val;
-};
-
 /* Bit Ops
  ******************************************************************************/
 var hashFragment = function hashFragment(shift, h) {
@@ -158,13 +150,14 @@ var arraySpliceOut = function arraySpliceOut(at, arr) {
         out[g++] = arr[i++];
     }return out;
 };
+
 /* 
  ******************************************************************************/
 /**
 	Create an internal node with one child
  */
 var create1Internal = function create1Internal(h, n) {
-    var children = [];
+    var children = new Array(BUCKET_SIZE);
     children[h] = n;
     return new InternalNode(1, children);
 };
@@ -173,7 +166,7 @@ var create1Internal = function create1Internal(h, n) {
 	Create an internal node with two children
  */
 var create2Internal = function create2Internal(h1, n1, h2, n2) {
-    var children = [];
+    var children = new Array(BUCKET_SIZE);
     children[h1] = n1;
     children[h2] = n2;
     return new InternalNode(2, children);
@@ -255,7 +248,7 @@ var _lookup = function _lookup(node, h, k) {
  ******************************************************************************/
 empty._modify = function (shift, f, h, k) {
     var v = f();
-    return isNothing(v) ? empty : new Leaf(h, k, v);
+    return v === nothing ? empty : new Leaf(h, k, v);
 };
 
 Leaf.prototype._modify = function (shift, f, h, k) {
