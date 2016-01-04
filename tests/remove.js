@@ -1,92 +1,100 @@
-var ht = require('../dist_node/hashtrie');
+"use strict";
+const hashtrie = require('../hashtrie');
+const assert = require('chai').assert;
 
-
-exports.single = function(test) {
-    var h = ht.set('a', 3, ht.empty);
-    test.equal(ht.get('a', h), 3);
-    
-    var h1 = ht.remove('a', h);
-    test.equal(ht.get('a', h1), null);
-
-    test.done();
-};
-
-exports.remove_on_empty = function(test) {
-    var h = ht.remove('x', ht.empty);
-    test.done();
-};
-
-exports.delete_one_entry = function(test) {
-    var h1 = ht.set('b', 5, ht.set('a', 3, ht.empty));
-    
-    var h2 = ht.remove('a', h1);
-    test.equal(ht.get('a', h2), null);
-    test.equal(ht.get('b', h2), 5);
-    
-    var h3 = ht.remove('b', h2);
-    test.equal(ht.get('a', h3), null);
-    test.equal(ht.get('b', h3), null);
-    
-    test.done();
-};
-
-exports.remove_does_not_alter_original = function(test) {
-    var h1 = ht.set('b', 5,ht.set('a', 3, ht.empty));
-    
-    var h2 = ht.remove('a', h1);
-    
-    test.equal(ht.get('a', h1), 3);
-    test.equal(ht.get('b', h1), 5);
-    
-    test.equal(ht.get('a', h2), null);
-    test.equal(ht.get('b', h2), 5);
-    
-    test.done();
-};
-
-exports.delete_collision = function(test) {
-    var h1 = ht.setHash(0, 'b', 5, ht.setHash(0, 'a', 3, ht.empty));
-    var h2 = ht.removeHash(0, 'a', h1);
-    
-    test.equal(ht.getHash(0, 'a', h2), null);
-    test.equal(ht.getHash(0, 'b', h2), 5);
-    
-    test.done();
-};
-
-exports.remove_many = function(test) {
-    var insert = ["n", "U", "p", "^", "h", "w", "W", "x", "S", "f", "H", "m", "g",
-               "l", "b", "_", "V", "Z", "G", "o", "F", "Q", "a", "k", "j", "r",
-               "B", "A", "y", "\\", "R", "D", "i", "c", "]", "C", "[", "e", "s",
-               "t", "J", "E", "q", "v", "M", "T", "N", "L", "K", "Y", "d", "P",
-               "u", "I", "O", "`", "X"];
-    
-    var remove = ["w", "m", "Q", "R", "i", "K", "P", "Y", "D", "g", "y", "L",
-                  "b", "[", "a", "t", "j", "W", "J", "G", "q", "r", "p", "U",
-                  "v", "h", "S", "_", "d", "x", "I", "F", "f", "n", "B", "\\",
-                  "k", "V", "N", "l", "X", "A", "]", "s", "Z", "O", "^", "o",
-                  "`", "H", "E", "e", "M", "u", "T", "c", "C"];
-    
-    var h = ht.empty;
-    insert.forEach(function(x) {
-        h = ht.set(x, x, h);
+describe('remove', () => {
+    it('should noop on empty', () => {
+        assert.strictEqual(0, hashtrie.count(hashtrie.remove('a', hashtrie.empty)));
+        assert.strictEqual(0, hashtrie.count(hashtrie.remove('b', hashtrie.empty)));
     });
     
-    for (var i = 0; i < remove.length; ++i) {
-        h = ht.remove(remove[i], h);
+    it('should remove value from single map', () => {
+        const h1 = hashtrie.empty.set('a', 3);
+        const h2 = h1.remove('a');
         
-        for (var g = 0; g <= i; ++g) {
-            test.equal(
-                ht.get(remove[g], h),
-                null);
-        }
-        for (var g = i + 1; g < remove.length; ++g) {
-            test.equal(
-                ht.get(remove[g], h),
-                remove[g]);
-        }
-    } 
+        assert.strictEqual(0, hashtrie.count(h2));
+        assert.strictEqual(undefined, hashtrie.get('a', h2));
+        
+        assert.strictEqual(1, hashtrie.count(h1));
+        assert.strictEqual(3, hashtrie.get('a', h1));
+    });
     
+    it('should only remove a single entry', () => {
+        const h1 = hashtrie.empty
+            .set('a', 3)
+            .set('b', 5);
+        const h2 = hashtrie.remove('a', h1);
+        
+        assert.strictEqual(1, hashtrie.count(h2));
+        assert.strictEqual(undefined, hashtrie.get('a', h2));
+        assert.strictEqual(5, hashtrie.get('b', h2));
 
-    test.done();
-};
+        assert.strictEqual(2, hashtrie.count(h1));
+        assert.strictEqual(3, hashtrie.get('a', h1));
+        assert.strictEqual(5, hashtrie.get('b', h1));
+    });
+    
+    it('should remove collisions correctly a single entry', () => {
+        const h1 = hashtrie.empty
+            .setHash(0, 'a', 3)
+            .setHash(0, 'b', 5);
+
+        const h2 = h1.deleteHash(0, 'a');
+        
+        assert.strictEqual(1, hashtrie.count(h2));
+        assert.strictEqual(undefined, h2.getHash(0, 'a'));
+        assert.strictEqual(5, h2.getHash(0, 'b'));
+
+        assert.strictEqual(2, hashtrie.count(h1));
+        assert.strictEqual(3, h1.getHash(0, 'a'));
+        assert.strictEqual(5, h1.getHash(0, 'b'));
+    });
+    
+     it('should not remove for a collision that does not match key', () => {
+        const h1 = hashtrie.empty
+            .setHash(0, 'a', 3)
+            .setHash(0, 'b', 5);
+            
+        const h2 = h1.removeHash(0, 'c');
+    
+        assert.strictEqual(3, h2.getHash(0, 'a'));
+        assert.strictEqual(5, h2.getHash(0, 'b'));
+        assert.strictEqual(undefined, h2.getHash(0, 'c'));
+    });
+    
+    it('should remove correctly from large set', () => {
+        const insert = [
+            "n", "U", "p", "^", "h", "w", "W", "x", "S", "f", "H", "m", "g",
+            "l", "b", "_", "V", "Z", "G", "o", "F", "Q", "a", "k", "j", "r",
+            "B", "A", "y", "\\", "R", "D", "i", "c", "]", "C", "[", "e", "s",
+            "t", "J", "E", "q", "v", "M", "T", "N", "L", "K", "Y", "d", "P",
+            "u", "I", "O", "`", "X"];
+    
+        const remove = [
+            "w", "m", "Q", "R", "i", "K", "P", "Y", "D", "g", "y", "L",
+            "b", "[", "a", "t", "j", "W", "J", "G", "q", "r", "p", "U",
+            "v", "h", "S", "_", "d", "x", "I", "F", "f", "n", "B", "\\",
+            "k", "V", "N", "l", "X", "A", "]", "s", "Z", "O", "^", "o",
+            "`", "H", "E", "e", "M", "u", "T", "c", "C"];
+    
+        let h = hashtrie.empty;
+        insert.forEach(function(x) {
+            h = hashtrie.set(x, x, h);
+        });
+    
+        for (let i = 0; i < remove.length; ++i) {
+            h = hashtrie.remove(remove[i], h);
+        
+            for (let g = 0; g <= i; ++g) {
+                assert.strictEqual(
+                    hashtrie.get(remove[g], h),
+                    undefined);
+            }
+            for (let g = i + 1; g < remove.length; ++g) {
+                assert.strictEqual(
+                    hashtrie.get(remove[g], h),
+                    remove[g]);
+            }
+        }
+    });
+});

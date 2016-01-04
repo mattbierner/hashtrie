@@ -1,55 +1,44 @@
-var ht = require('../dist_node/hashtrie');
+"use strict";
+const hashtrie = require('../hashtrie');
+const assert = require('chai').assert;
 
-var containsAll = function(test, arr, keys) {
-    keys.forEach(function(k) {
-        test.ok(arr.indexOf(k) >= 0, k);
+describe('values', () => {
+    it('should return empty for empty map', () => {
+        assert.deepEqual([], hashtrie.values(hashtrie.empty));
     });
-};
-
-
-exports.empty = function(test) {
-    test.deepEqual(
-        ht.values(ht.empty),
-        []);
-
-    test.done();
-};
-
-exports.simple_keys= function(test) {
-    var h1 = ht.set('b', 5, ht.set('a', 3, ht.empty));
     
-    containsAll(test,
-        ht.values(h1),
-        [5, 3]);
-
-    test.done();
-};
-
-exports.collision = function(test) {
-    var h1 = ht.setHash(0, 'b', 5, ht.setHash(0, 'a', 3, ht.empty));
+    it('should return single key for single element map', () => {
+        assert.deepEqual([3], hashtrie.values(hashtrie.empty.set('a', 3)));
+        assert.deepEqual([5], hashtrie.empty.set('b', 5).values());
+    });
+    
+    it('should return all values for collision', () => {
+        const h1 = hashtrie.empty
+            .setHash(0, 'a', 3)
+            .setHash(0, 'b', 5);
         
-    containsAll(test,
-        ht.values(h1),
-        [5, 3]);
-    
-    test.done();
-};
-
-exports.many = function(test) {
-    var insert = ["n", "U", "p", "^", "h", "w", "W", "x", "S", "f", "H", "m", "g",
-               "l", "b", "_", "V", "Z", "G", "o", "F", "Q", "a", "k", "j", "r",
-               "B", "A", "y", "\\", "R", "D", "i", "c", "]", "C", "[", "e", "s",
-               "t", "J", "E", "q", "v", "M", "T", "N", "L", "K", "Y", "d", "P",
-               "u", "I", "O", "`", "X"];
-    
-    var h = ht.empty;
-    insert.forEach(function(x) {
-        h = ht.set(x, x, h);
+        assert.sameMembers([5, 3], hashtrie.values(h1));
     });
     
-    containsAll(test,
-        ht.values(h),
-        insert);
+    it('should return duplicate values', () => {
+        const h = hashtrie.empty.set('b', 3).set('a', 3);
+        assert.deepEqual([3, 3], hashtrie.values(h));
+    });
     
-    test.done();
-};
+    it('return correct values while items are added', () => {
+        const insert = [
+            "n", "U", "p", "^", "h", "w", "W", "x", "S", "f", "H", "m", "g",
+            "l", "b", "_", "V", "Z", "G", "o", "F", "Q", "a", "k", "j", "r",
+            "B", "A", "y", "\\", "R", "D", "i", "c", "]", "C", "[", "e", "s",
+            "t", "J", "E", "q", "v", "M", "T", "N", "L", "K", "Y", "d", "P",
+            "u", "I", "O", "`", "X"];
+    
+        let h = hashtrie.empty;
+        insert.forEach(x => {
+            h = h.set(x, x);
+        });
+    
+        assert.sameMembers(insert, hashtrie.values(h));
+    });
+});
+
